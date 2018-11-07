@@ -1,0 +1,30 @@
+#version 330 core
+
+// Input vertex data, different for all executions of this shader.
+layout(location = 0) in vec3 vertexPosition_modelspace;
+layout(location = 1) in vec3 vertexNormal_modelspace;
+layout(location = 2) in vec2 vertexUV;
+layout(location = 3) in vec2 vertexUV1;
+layout(location = 4) in vec4 vertexColour;
+layout(location = 5) in vec3 vertexTangent_modelspace;
+layout(location = 6) in vec3 vertexBitangent_modelspace;
+
+out vec2 TexCoords;
+out vec3 WorldPos;
+out vec3 Normal;
+
+// Values that stay constant for the whole mesh.
+uniform mat4 MVP;
+uniform mat4 V;
+uniform mat4 M;
+uniform mat3 MVR;	// upper left 3x3 matrix for the View * Model matrix!
+
+
+void main(){
+	
+	WorldPos = (M * vec4(vertexPosition_modelspace,1.0)).xyz;
+	Normal = mat3(M) * vertexNormal_modelspace;
+	TexCoords = vertexUV;
+
+	gl_Position =  MVP * vec4(vertexPosition_modelspace ,1);
+}

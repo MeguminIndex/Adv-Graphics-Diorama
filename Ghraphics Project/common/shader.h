@@ -10,6 +10,9 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
+
+#include <glm/gtc/type_ptr.hpp>
+
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -168,6 +171,13 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+
+	
+	void set3fv(const std::string &name, GLsizei size,  float value[])
+	{
+		//glUseProgram(ID);
+		glUniform3fv(glGetUniformLocation(ID, name.c_str()),size, value);
+	}
 
 	
 private:

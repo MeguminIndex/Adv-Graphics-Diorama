@@ -181,21 +181,21 @@ int main( void )
 	check_gl_error();
 
 	
-
+	Shader PBR("PBR.vertexshader","PBR.fragmentshader");
 
 
 
 	//Skybox sky("xp.jpg", "xn.jpg", "yp.jpg", "yn.jpg", "zp.jpg", "zn.jpg");
 	Skybox sky("../3dcontent/skybox/tropicalsunnyday/","TropicalSunnyDayRight.png", "TropicalSunnyDayLeft.png", "TropicalSunnyDayUp.png", "TropicalSunnyDayDown.png", "TropicalSunnyDayBack.png", "TropicalSunnyDayFront.png");
 
-	Model matModel("../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj");
+	Model matModel("../3dcontent/models/mat_scaled/mat_scaled.obj");
 	//matModel.SetPosition(glm::vec3(-1.0, -0.02, 0));
 	//../3dcontent/models/panzer-ausf-b-fbx/german-ausf-b.fbx
 	matModel.SetPosition(glm::vec3(-3, -0.02, 0));
 	matModel.SetScale(vec3(0.5f, 0.5f, 0.5f));
 
 	// left hand guy with no spec+AO for comparison
-	Model matModel2("../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj");
+	Model matModel2("../3dcontent/models/mat_scaled/mat_scaled.obj");
 	//model 4 Turret
 	//model 0 track Wheels
 	//
@@ -253,8 +253,7 @@ int main( void )
 
 	bool bShowNormalMap = false;
 
-	
-
+#pragma region Post-Processing INIT
 	Shader screenShader("screenShader.vertexshader", "screenShader.fragmentshader");
 
 	// framebuffer configuration
@@ -267,7 +266,7 @@ int main( void )
 	unsigned int textureColorbuffer;
 	glGenTextures(1, &textureColorbuffer);
 	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,window_Width , window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_Width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
@@ -276,13 +275,13 @@ int main( void )
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_Width, window_height); // use a single renderbuffer object for both a depth AND stencil buffer.
-	
+
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
-	
 
-	// now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+
+																								  // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -312,15 +311,51 @@ int main( void )
 
 
 	bool postP = false;
+#pragma endregion
+
+
+
+	// lights
+	// ------
+
+
+	//float lightPositions[] = {
+	//	-10.0f,  10.0f, 10.0f,
+	//	10.0f,  10.0f, 10.0f,
+	//	-10.0f, -10.0f, 10.0f,
+	//	10.0f, -10.0f, 10.0f
+	//};
+	//float lightColors[] = {
+	//	300.0f, 300.0f, 300.0f,
+	//	300.0f, 300.0f, 300.0f,
+	//	300.0f, 300.0f, 300.0f,
+	//	300.0f, 300.0f, 300.0f
+	//};
+
+
+
+	glm::vec3 lightPositions[] = {
+		glm::vec3(-10.0f,  10.0f, 10.0f),
+		glm::vec3(10.0f,  10.0f, 10.0f),
+		glm::vec3(-10.0f, -10.0f, 10.0f),
+		glm::vec3(10.0f, -10.0f, 10.0f),
+	};
+	glm::vec3 lightColors[] = {
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f)
+	};
+
 
 
 	do{
 
 		if (postP == true)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-			
+			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);			
 		}
+
 		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	
@@ -348,11 +383,6 @@ int main( void )
 		Projection = mainCamera.getProjectionMatrix();
 		View = mainCamera.getViewMatrix();
 
-		
-
-
-		
-
 
 		// skybox code causes skyboxShader to be bound.. might want to leave this as another step?
 		// skybox always comes first, so other models can overwrite colour buffer
@@ -363,25 +393,71 @@ int main( void )
 		StandardShaderWithAO.setFloat("ambientlevel", 0.3f);
 		StandardShaderWithAO.setVec3("lightColour", lightColour);
 		StandardShaderWithAO.setVec4("light", light);
+			
+
 		
 		
+
 
 		matModel.Render(View, Projection, StandardShaderWithAO);
 	
+		// Draw your model here!
+		baseModel.Render(View, Projection, StandardShader);
+
 
 		// now bind and use our "Standard phong lighting shader for both "normal" mat and the base mesh
-		StandardShader.use();
+		//StandardShader.use();
 		// global ambient light level for everything rendered with this shader
-		StandardShader.setFloat("ambientlevel", 0.3f);
-		StandardShader.setVec3("lightColour", lightColour);
-		StandardShader.setVec4("light", light);
-		StandardShader.setFloat("specularIntensity", specIndensity);
-		StandardShader.setFloat("specShininess",specShinny);
+		//StandardShader.setFloat("ambientlevel", 0.3f);
+		//StandardShader.setVec3("lightColour", lightColour);
+		//StandardShader.setVec4("light", light);
+		//StandardShader.setFloat("specularIntensity", specIndensity);
+		//StandardShader.setFloat("specShininess",specShinny);
+
+		PBR.use();
+		
+		/*PBR.setVec3("albedo", 0.5f, 0.0f, 0.0f);
+		PBR.setFloat("ao", 1.0f);
+		PBR.setFloat("metallic", 0.8f);
+		PBR.setFloat("roughness", 0.1);*/
+
+		//PBR.setInt("nLights", 4);
+
+		//PBR.setVec3("lightPositions", vec3(lightPositions[0]));
+		//PBR.setVec3("lightColors", vec3(lightColors[0]));
+		//PBR.set3fv("lightPositions", 4, lightPositions);
+		//PBR.set3fv("lightColors", 4, lightColors);
+
+		lightPositions[0] = lightpos;
+		for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+		{
+			glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+			newPos = lightPositions[i];
+			PBR.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+			PBR.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+
+		
+		}
+
+
+
+		//for (unsigned int i = 0; i < lightPositions->length()+1; ++i)
+		//{
+		//	PBR.setVec3("pointLights["+ std::to_string(i) +"].position", lightPositions[i]);
+		//	PBR.setVec3("pointLights[" + std::to_string(i) + "].colour", lightColors[i]);
+		//	//PBR.setVec3("lightPositions["+ std::to_string(i) +"].ambient", 0.05f, 0.05f, 0.05f);
+		//	//PBR.setVec3("lightPositions["+ std::to_string(i) +"].diffuse", 0.8f, 0.8f, 0.8f);
+		//	//PBR.setVec3("lightPositions["+ std::to_string(i) +"].specular", 1.0f, 1.0f, 1.0f);
+		//	//PBR.setFloat("lightPositions["+ std::to_string(i) +"].constant", 1.0f);
+		//	//PBR.setFloat("lightPositions["+ std::to_string(i) +"].linear", 0.09);
+		//	//PBR.setFloat("lightPositions["+ std::to_string(i) +"].quadratic", 0.032);
+		//}
+
+		
 
 		matModel2.Render(View, Projection, StandardShader);
 
-		// Draw your model here!
-		baseModel.Render(View, Projection, StandardShader);
+	
 
 		// using a sphere for a light so we can vizualize the light position
 		// it has a custom shader that basically emits solid white
@@ -413,7 +489,6 @@ int main( void )
 		lastTime = currentTime;
 
 		glfwPollEvents();
-
 
 		Input();
 
@@ -456,9 +531,9 @@ int main( void )
 		Update(deltaTime);
 
 		//Rotate Turret
-		quat rotation = matModel2.GetMesh(4)->GetRotation();		
+		/*quat rotation = matModel.GetMesh(4)->GetRotation();		
 		rotation *= glm::angleAxis(glm::radians(30.f * deltaTime) , glm::vec3(0.f, 1.f, 0.f));;
-		matModel2.GetMesh(4)->SetRotation(rotation);
+		matModel.GetMesh(4)->SetRotation(rotation);*/
 
 		
 

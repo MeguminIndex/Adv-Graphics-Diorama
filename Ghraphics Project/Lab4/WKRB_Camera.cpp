@@ -69,7 +69,10 @@ void WKRB_Camera::computeMatricesFromInputs(float deltaTime, GLFWwindow * window
 
 void WKRB_Camera::LookAt(vec3 object, vec3 up)
 {
-
 	ViewMatrix = lookAt(position,object,up);
-
 }
+
+
+
+
+

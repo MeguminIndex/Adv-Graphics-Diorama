@@ -60,6 +60,9 @@ void Mesh::Draw(Shader & shader)
 			number = std::to_string(aoNr++); // transfer unsigned int to stream
 		else if (name == "texture_emissive")
 			number = std::to_string(emissiveNr++); // transfer unsigned int to stream
+		else if (name == "texture_shininess")
+			number = std::to_string(emissiveNr++); // transfer unsigned int to stream
+
 		// now set the sampler to the correct texture unit
 		std::string texturename = name + number;
 		glUniform1i(glGetUniformLocation(shader.ID, (texturename).c_str()), i);
@@ -437,12 +440,15 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
 		std::vector<MeshTexture> normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-		//normal
+		//AO
 		std::vector<MeshTexture> ambientMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_ao");
 		textures.insert(textures.end(), ambientMaps.begin(), ambientMaps.end());
 
 
 		// TODO: right now, the texture has to be in the same directory as the model to work.. maybe fix this requirement?
+
+		std::vector<MeshTexture> shininessMaps = loadMaterialTextures(material, aiTextureType_SHININESS, "texture_shininess");
+		textures.insert(textures.end(), shininessMaps.begin(), shininessMaps.end());
 
 	}
 
