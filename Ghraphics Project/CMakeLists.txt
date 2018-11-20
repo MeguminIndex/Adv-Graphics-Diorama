@@ -79,7 +79,10 @@ add_executable(${LABNAME}
 	common/GLError.cpp
 	common/skybox.h
 	common/skybox.cpp
-
+	${LABNAME}/screenShader.vertexshader
+	${LABNAME}/screenShader.fragmentshader
+	${LABNAME}/PBR.vertexshader
+	${LABNAME}/PBR.fragmentshader
 	${LABNAME}/StandardShading.vertexshader
 	${LABNAME}/StandardShading.fragmentshader
 	${LABNAME}/StandardShadingWithAOSpecmaps.vertexshader
@@ -106,6 +109,54 @@ add_custom_command(
 )
 
 ###################################### END STANDARD BLOCK FOR LAB4
+
+
+####################################### STANDARD BLOCK FOR A LAB PROGRAM IN THE .SLN FILE - REPLACE LAB<number> WITH YOUR OWN NUMBER!
+
+set (LABNAME Lab7)
+# Lab 7
+add_executable(${LABNAME}
+	${LABNAME}/Lab7.cpp
+	common/controls.hpp
+	common/controls.cpp
+	common/quaternion_utils.hpp
+	common/quaternion_utils.cpp
+	common/model.h
+	common/model.cpp
+	common/shader.h
+	common/GLError.h
+	common/GLError.cpp
+	common/skybox.h
+	common/skybox.cpp
+
+	${LABNAME}/StandardShading.vertexshader
+	${LABNAME}/StandardShading.fragmentshader
+	${LABNAME}/StandardShadingWithReflect.fragmentshader
+	${LABNAME}/StandardShadingWithReflect.vertexshader
+	${LABNAME}/StandardShadingWithRefract.fragmentshader
+	${LABNAME}/StandardShadingWithRefract.vertexshader
+	${LABNAME}/LightShading.vertexshader
+	${LABNAME}/LightShading.fragmentshader
+	${LABNAME}/skybox.vertexshader
+	${LABNAME}/skybox.fragmentshader
+)
+target_link_libraries(${LABNAME}
+	${ALL_LIBS}
+	assimp
+)
+
+set_target_properties(${LABNAME} PROPERTIES COMPILE_DEFINITIONS "USE_ASSIMP")
+
+# Visual studio working directories (tells Visual Studio where you can debug from etc)
+create_target_launcher(${LABNAME} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${LABNAME}/")
+
+# Visual studio custom build command (copies .exe (debug or release) file from build dir back into the folder where the source is)
+add_custom_command(
+   TARGET ${LABNAME} POST_BUILD
+   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/${LABNAME}${CMAKE_EXECUTABLE_SUFFIX}" "${CMAKE_CURRENT_SOURCE_DIR}/${LABNAME}/"
+)
+
+###################################### END STANDARD BLOCK FOR LAB7
 
 
 

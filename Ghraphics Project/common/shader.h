@@ -173,7 +173,7 @@ public:
     }
 
 	
-	void set3fv(const std::string &name, GLsizei size,  float value[])
+	void set3fv(const std::string &name, GLsizei size,  GLfloat* value)
 	{
 		//glUseProgram(ID);
 		glUniform3fv(glGetUniformLocation(ID, name.c_str()),size, value);

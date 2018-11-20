@@ -21,6 +21,8 @@ using namespace glm;
 #include "common/skybox.h"
 //#include "common/controls.hpp"
 
+#include "SOIL2.h"
+
 
 #include "WKRB_Camera.h"
 
@@ -163,6 +165,8 @@ int main( void )
 
 #pragma endregion
 
+
+#pragma region Shader Init
 	// shader for mat (which has ambient occlusion texture in the ambient channel that is multiplied by diffuse colour texture)
 	// and specularity colour map
 	Shader StandardShaderWithAO("StandardShadingWithAOSpecmaps.vertexshader", "StandardShadingWithAOSpecmaps.fragmentshader");
@@ -180,29 +184,51 @@ int main( void )
 	Shader skyboxShader("skybox.vertexshader", "skybox.fragmentshader");
 	check_gl_error();
 
-	
-	Shader PBR("PBR.vertexshader","PBR.fragmentshader");
+	//PBR
+	Shader PBR("PBR.vertexshader", "PBR.fragmentshader");
+
+	// reflection shader version
+	Shader StandardShaderWithReflect("StandardShadingWithReflect.vertexshader", "StandardShadingWithReflect.fragmentshader");
+	check_gl_error();
+
+	// refraction shader version
+	Shader StandardShaderWithRefract("StandardShadingWithRefract.vertexshader", "StandardShadingWithRefract.fragmentshader");
+	check_gl_error();
+
+#pragma endregion
+
 
 
 
 	//Skybox sky("xp.jpg", "xn.jpg", "yp.jpg", "yn.jpg", "zp.jpg", "zn.jpg");
 	Skybox sky("../3dcontent/skybox/tropicalsunnyday/","TropicalSunnyDayRight.png", "TropicalSunnyDayLeft.png", "TropicalSunnyDayUp.png", "TropicalSunnyDayDown.png", "TropicalSunnyDayBack.png", "TropicalSunnyDayFront.png");
 
-	Model matModel("../3dcontent/models/mat_scaled/mat_scaled.obj");
+	Model togModel("../3dcontent/models/TOG/tog_II.obj");
 	//matModel.SetPosition(glm::vec3(-1.0, -0.02, 0));
 	//../3dcontent/models/panzer-ausf-b-fbx/german-ausf-b.fbx
-	matModel.SetPosition(glm::vec3(-3, -0.02, 0));
-	matModel.SetScale(vec3(0.5f, 0.5f, 0.5f));
+	togModel.SetPosition(glm::vec3(-3, -0.02, 0));
+	togModel.SetScale(vec3(0.5f, 0.5f, 0.5f));
 
 	// left hand guy with no spec+AO for comparison
-	Model matModel2("../3dcontent/models/mat_scaled/mat_scaled.obj");
-	//model 4 Turret
-	//model 0 track Wheels
-	//
-
-	matModel2.SetPosition(glm::vec3(0, -0.02, 0));
+	//"../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj"
+	Model matModel2("../3dcontent/models/WoT_IS7/IS7.obj");
+	matModel2.SetPosition(glm::vec3(-3, -0.02, 4));
 	matModel2.SetScale(vec3(0.5f, 0.5f, 0.5f));
 
+
+
+
+	Model asusfB("../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj");
+	asusfB.SetPosition(glm::vec3(0, -0.02, 0));
+	asusfB.SetScale(vec3(0.5f, 0.5f, 0.5f));
+	//model 4 Turret
+	//model 0 track Wheels
+
+	Model asusfB2("../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj");
+	asusfB2.SetScale(vec3(0.5f, 0.5f, 0.5f));
+
+	Model sphere("../3dcontent/models/sphere/sphere.obj");
+	sphere.SetPosition(glm::vec3(3, 1, 0));
 
 	// the "ground" mesh, in this case a cylinder with a slight tapered base
 	Model baseModel("../3dcontent/models/base/base.obj");
@@ -319,26 +345,14 @@ int main( void )
 	// ------
 
 
-	//float lightPositions[] = {
-	//	-10.0f,  10.0f, 10.0f,
-	//	10.0f,  10.0f, 10.0f,
-	//	-10.0f, -10.0f, 10.0f,
-	//	10.0f, -10.0f, 10.0f
-	//};
-	//float lightColors[] = {
-	//	300.0f, 300.0f, 300.0f,
-	//	300.0f, 300.0f, 300.0f,
-	//	300.0f, 300.0f, 300.0f,
-	//	300.0f, 300.0f, 300.0f
-	//};
 
 
 
 	glm::vec3 lightPositions[] = {
-		glm::vec3(-10.0f,  10.0f, 10.0f),
-		glm::vec3(10.0f,  10.0f, 10.0f),
-		glm::vec3(-10.0f, -10.0f, 10.0f),
-		glm::vec3(10.0f, -10.0f, 10.0f),
+		glm::vec3(-10.0f,  10.0f,  10.0f),
+		glm::vec3(999.0f, 999.0f, 999.0f),
+		glm::vec3(999.0f, 999.0f, 999.0f),
+		glm::vec3(999.0f, 999.0f, 999.0f),
 	};
 	glm::vec3 lightColors[] = {
 		glm::vec3(300.0f, 300.0f, 300.0f),
@@ -347,8 +361,24 @@ int main( void )
 		glm::vec3(300.0f, 300.0f, 300.0f)
 	};
 
+	unsigned int matalic = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneMetallic.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
+	unsigned int Albedo = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneAlbedo.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
+	unsigned int AO = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneAmbient_Occlusionc.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
+	unsigned int normal = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneNormalc.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
+	unsigned int roughness = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneRoughness2.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
 
 
+	float reflectionamount = 0.3f;
+	float indexofrefraction = 0.5f;
+
+
+	mainCamera.getCameraPosition();
+
+	float tankSpeed = 2.0f;
+	vec3 movingTankPos = vec3(3, -0.02, 0);
+	asusfB2.SetPosition(movingTankPos);
+
+	bool tankForward = true;
 	do{
 
 		if (postP == true)
@@ -356,9 +386,12 @@ int main( void )
 			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);			
 		}
 
+		glEnable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	
+		
 		// Compute time difference between current and last frame
 		currentTime = glfwGetTime();
 		float deltaTime = float(currentTime - lastTime);
@@ -384,6 +417,9 @@ int main( void )
 		View = mainCamera.getViewMatrix();
 
 
+		glm::vec3 cameraPosition = mainCamera.getCameraPosition();
+
+
 		// skybox code causes skyboxShader to be bound.. might want to leave this as another step?
 		// skybox always comes first, so other models can overwrite colour buffer
 		sky.Draw(View,Projection, skyboxShader);
@@ -395,15 +431,39 @@ int main( void )
 		StandardShaderWithAO.setVec4("light", light);
 			
 
-		
-		
-
-
-		matModel.Render(View, Projection, StandardShaderWithAO);
 	
-		// Draw your model here!
 		baseModel.Render(View, Projection, StandardShader);
+		togModel.Render(View, Projection, StandardShaderWithAO);
+	
 
+		glActiveTexture(GL_TEXTURE20);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, sky.cubemaptextureID);
+
+		StandardShaderWithReflect.use();
+		StandardShaderWithReflect.setInt("texcube", 20);
+		StandardShaderWithReflect.setFloat("reflectionamount", reflectionamount);
+		StandardShaderWithReflect.setFloat("ambientlevel", 0.4f);
+		StandardShaderWithReflect.setVec3("lightColour", lightColour);
+		StandardShaderWithReflect.setVec4("light", light);
+		StandardShaderWithReflect.setVec3("cameraPosition", cameraPosition);
+
+		asusfB.Render(View, Projection, StandardShaderWithReflect);
+
+		// draw the diffuse mat, he's got AO!
+		StandardShaderWithRefract.use();
+		StandardShaderWithRefract.setInt("texcube", 20);
+		StandardShaderWithRefract.setFloat("reflectionamount", reflectionamount);
+		StandardShaderWithRefract.setFloat("ambientlevel", 0.4f);
+		StandardShaderWithRefract.setVec3("lightColour", lightColour);
+		StandardShaderWithRefract.setVec4("light", light);
+		StandardShaderWithRefract.setVec3("cameraPosition", cameraPosition);
+		StandardShaderWithRefract.setFloat("indexofrefraction", indexofrefraction);
+
+		asusfB2.Render(View, Projection, StandardShaderWithRefract);
+
+
+		glActiveTexture(GL_TEXTURE20); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_CUBE_MAP, 0); // bind texture unit back to 0
 
 		// now bind and use our "Standard phong lighting shader for both "normal" mat and the base mesh
 		//StandardShader.use();
@@ -414,32 +474,37 @@ int main( void )
 		//StandardShader.setFloat("specularIntensity", specIndensity);
 		//StandardShader.setFloat("specShininess",specShinny);
 
+
+
+
 		PBR.use();
 		
+		PBR.setFloat("ambientlevel", 0.3f);
+
+
+
+		/*glActiveTexture(GL_TEXTURE10);
+		glUniform1i(glGetUniformLocation(PBR.ID, "metallicMap"), matalic);
+		glBindTexture(GL_TEXTURE_2D, matalic);*/
+
+
+
+		lightPositions[0] = lightpos;
+
 		/*PBR.setVec3("albedo", 0.5f, 0.0f, 0.0f);
 		PBR.setFloat("ao", 1.0f);
 		PBR.setFloat("metallic", 0.8f);
 		PBR.setFloat("roughness", 0.1);*/
-
 		//PBR.setInt("nLights", 4);
-
 		//PBR.setVec3("lightPositions", vec3(lightPositions[0]));
 		//PBR.setVec3("lightColors", vec3(lightColors[0]));
-		//PBR.set3fv("lightPositions", 4, lightPositions);
-		//PBR.set3fv("lightColors", 4, lightColors);
-
-		lightPositions[0] = lightpos;
+		
 		for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
 		{
-			glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
-			newPos = lightPositions[i];
-			PBR.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+			PBR.setVec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
 			PBR.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
-
-		
+	
 		}
-
-
 
 		//for (unsigned int i = 0; i < lightPositions->length()+1; ++i)
 		//{
@@ -454,10 +519,37 @@ int main( void )
 		//}
 
 		
+		matModel2.Render(View, Projection, PBR);
 
-		matModel2.Render(View, Projection, StandardShader);
+		glActiveTexture(GL_TEXTURE11);
+		glUniform1i(glGetUniformLocation(PBR.ID, "texture_diffuse1"), Albedo);
+		glBindTexture(GL_TEXTURE_2D, matalic);
 
-	
+		glActiveTexture(GL_TEXTURE12);
+		glUniform1i(glGetUniformLocation(PBR.ID, "texture_ao1"), AO);
+		glBindTexture(GL_TEXTURE_2D, matalic);
+
+		glActiveTexture(GL_TEXTURE13);
+		glUniform1i(glGetUniformLocation(PBR.ID, "texture_specular1"), roughness);
+		glBindTexture(GL_TEXTURE_2D, matalic);
+
+		glActiveTexture(GL_TEXTURE14);
+		glUniform1i(glGetUniformLocation(PBR.ID, "texture_height1"), normal);
+		glBindTexture(GL_TEXTURE_2D, matalic);
+
+		sphere.Render(View,Projection,PBR);
+
+		glActiveTexture(GL_TEXTURE10); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_2D, 0); // bind texture unit back to 0
+		glActiveTexture(GL_TEXTURE11); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_2D, 0); // bind texture unit back to 0
+		glActiveTexture(GL_TEXTURE12); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_2D, 0); // bind texture unit back to 0
+		glActiveTexture(GL_TEXTURE13); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_2D, 0); // bind texture unit back to 0
+		glActiveTexture(GL_TEXTURE14); // activate the texture unit									
+		glBindTexture(GL_TEXTURE_2D, 0); // bind texture unit back to 0
+
 
 		// using a sphere for a light so we can vizualize the light position
 		// it has a custom shader that basically emits solid white
@@ -527,16 +619,70 @@ int main( void )
 		}
 
 
+
+#
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		{
+			reflectionamount += 0.01f;
+			if (reflectionamount > 1.0f) reflectionamount = 1.0f;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		{
+			reflectionamount -= 0.01f;
+			if (reflectionamount < 0.0f) reflectionamount = 0.0f;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_KP_0) == GLFW_PRESS)
+		{
+			indexofrefraction += 0.01f;
+			//if (reflectionamount > 1.0f) reflectionamount = 1.0f;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_KP_1) == GLFW_PRESS)
+		{
+			indexofrefraction -= 0.01f;
+			//if (reflectionamount < 0.0f) reflectionamount = 0.0f;
+		}
+
+
+		indexofrefraction = clamp(indexofrefraction, -1.0f, 1.0f);
+
+
+		if (glfwGetKey(window, GLFW_KEY_KP_8) == GLFW_PRESS)
+		{
+			tankForward = !tankForward;
+		}
+
+
+		std::cout << "reflection amount: " << reflectionamount << "  index of refraction: " << indexofrefraction << std::endl;
+
+
+
+
+
 		//Updates game state
 		Update(deltaTime);
 
 		//Rotate Turret
-		/*quat rotation = matModel.GetMesh(4)->GetRotation();		
+		quat rotation = asusfB.GetMesh(4)->GetRotation();
 		rotation *= glm::angleAxis(glm::radians(30.f * deltaTime) , glm::vec3(0.f, 1.f, 0.f));;
-		matModel.GetMesh(4)->SetRotation(rotation);*/
+		asusfB.GetMesh(4)->SetRotation(rotation);
 
 		
+		
 
+		if (tankForward && movingTankPos.z < 5)
+		{
+			movingTankPos += (vec3(0, 0, 1)*tankSpeed)*deltaTime;
+			asusfB2.SetPosition(movingTankPos);
+
+		}
+		else if(!tankForward && movingTankPos.z > -5)
+		{
+			movingTankPos += (vec3(0, 0, -1)*tankSpeed)*deltaTime;
+			asusfB2.SetPosition(movingTankPos);
+		}
 
 	} // Check if the ESC key was pressed or the window was closed
 	while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
