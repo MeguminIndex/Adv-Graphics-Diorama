@@ -21,7 +21,9 @@ uniform vec3 lightColour;
 uniform float ambientlevel;
 
 uniform float specularIntensity;
-uniform float specShininess;
+//uniform float specShininess;
+
+uniform bool blinnPhong;
 
 void main()
 {    
@@ -51,16 +53,21 @@ void main()
 	
 	// compute specular term here..
 	
-	
 
 	//reflection direction
 	vec3 reflectDir = reflect(-l,n);
+	float cosAlpha = clamp( dot( n,reflectDir ), 0,1 );
+
+
+	if(blinnPhong == true)
+	{
+		vec3 halfVector = normalize(l + n);		
+		cosAlpha = clamp( dot( n,halfVector ), 0,1 );
+	}
+
 
 	// Cosine of the angle between the Eye vector and the Reflect vector,
-	// clamped to 0
-	//  - Looking into the reflection -> 1
-	//  - Looking elsewhere -> < 1
-	float cosAlpha = clamp( dot( n,reflectDir ), 0,1 );
+	//float cosAlpha = clamp( dot( n,reflectDir ), 0,1 );
 
 	FragColor = 
 		// Ambient : simulates indirect lighting
@@ -68,7 +75,7 @@ void main()
 		// Diffuse : "color" of the object
 		(MaterialDiffuseColor * lightColour * LightPower * cosTheta / (distance*distance) ) +
 		// TODO: Add specular term here!
-		(MaterialSpecularColor * lightColour * LightPower * pow(cosAlpha,5) / (distance*distance));
+		(MaterialSpecularColor * lightColour * LightPower * pow(cosAlpha,specularIntensity) / (distance*distance));
 
 
 }

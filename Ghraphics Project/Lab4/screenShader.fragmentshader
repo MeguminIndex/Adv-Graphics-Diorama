@@ -5,15 +5,81 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 
+
+//params
+uniform bool inverted;
+uniform bool grayScale;
+uniform bool sepia;
+uniform bool spiral;
+
+
+
+
+uniform vec2 resolution;
+uniform float sAmmount;
+
 void main()
 {
-    vec3 col = texture(screenTexture, TexCoords).rgb;
-    //FragColor = vec4(col, 1.0);
+
+	vec3 ogTexture = texture(screenTexture, TexCoords).rgb;
+   
+   vec3 col = ogTexture;
 	
-	//FragColor = vec4(vec3(1.0 - col), 1.0);
+	if(spiral == true)
+	{
 	
+		//create a swhirle spiral effect using
+		vec2 p = -1.0 + 2.0 * gl_FragCoord.xy / resolution.xy;
+		vec2 uv; 
+
+		float a = atan(p.y,p.x) / (2.0*3.1416);//using p value divide by a const factor (2.0) and pi changing factor adjusts the spiral
+		//a factor of 2 will have the spiral connect whilst changing the factor could cause several mirrored sections of the spiral on the screen 
+		
+		//sqrt(Tweaking this number affects the size of the spiral and canmake the spiral smaller and increase)
+		float r = sqrt(dot(p,p))/sqrt(2.0);
+		uv.x = r+sAmmount;//add spiral offset to animate the spiral this should eb something constantly increasing/deceaasing to make it spiral
+		uv.y = a+r;
+		vec3 swirlCol = texture2D(screenTexture,uv).xyz;
+		col = swirlCol;
+
 	
+	}
+	
+
+
+	
+
+	
+	if(inverted == true)
+	{
+		col = vec3(1.0 - col);
+	}
+	
+	if(grayScale == true)
+	{
     float average = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b;
-    FragColor = vec4(average, average, average, 1.0);
+    col = vec3(average, average, average);
 	
+	}
+	
+	if(sepia == true)
+	{
+
+
+	// convert the RGB values to sepia tone
+	vec3 tmpCol;
+		tmpCol.r = dot(col, vec3(.393, .769, .189));
+        tmpCol.g = dot(col, vec3(.349, .686, .168));
+        tmpCol.b = dot(col, vec3(.272, .534, .131));  
+
+		col = tmpCol;
+
+	}
+
+
+	
+
+
+	  FragColor = vec4(col, 1.0);
+
 } 

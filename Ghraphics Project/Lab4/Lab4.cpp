@@ -111,11 +111,15 @@ int main( void )
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	int window_height = 768, window_Width = 1024;
+	int window_height = 1080, window_Width = 1920;
 
+	vec2 Resolution;
+
+	Resolution.x = window_Width;
+	Resolution.y = window_height;
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow( 1024, 768, "Lab4 - Phong with specular+ambient occlusion maps", NULL, NULL);
+	window = glfwCreateWindow(Resolution.x, Resolution.y, "Lab4 - Phong with specular+ambient occlusion maps", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -149,7 +153,7 @@ int main( void )
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	glfwPollEvents();
-	glfwSetCursorPos(window, 1024 / 2, 768 / 2);
+	glfwSetCursorPos(window, Resolution.x / 2, Resolution.y / 2);
 
 	// Dark blue background
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
@@ -212,7 +216,7 @@ int main( void )
 	// left hand guy with no spec+AO for comparison
 	//"../3dcontent/models/panzer-ausf-b-obj/german-ausf-b.obj"
 	Model matModel2("../3dcontent/models/WoT_IS7/IS7.obj");
-	matModel2.SetPosition(glm::vec3(-3, -0.02, 4));
+	matModel2.SetPosition(glm::vec3(5, 1, -4));
 	matModel2.SetScale(vec3(0.5f, 0.5f, 0.5f));
 
 
@@ -231,19 +235,30 @@ int main( void )
 	sphere.SetPosition(glm::vec3(3, 1, 0));
 
 	// the "ground" mesh, in this case a cylinder with a slight tapered base
-	Model baseModel("../3dcontent/models/base/base.obj");
-
+	Model baseModel("../3dcontent/models/MyTerrain/MyTerrain.obj");
+	baseModel.SetScale(vec3(40.0f,40.0f,40.0f));
+	baseModel.SetPosition(vec3(0.0f,-7.0f, 0.0f));
 	// basically a sphere, but with a shader to make it entirely white
-	Model lightModel("../3dcontent/models/sphere/sphere.obj");
-	// naughty, should check if getmesh returns null!!!
-	lightModel.GetMesh(0)->SetScale(glm::vec3(0.3f, 0.3f, 0.3f));
+	//Model lightModel("../3dcontent/models/sphere/sphere.obj");
+	//// naughty, should check if getmesh returns null!!!
+	//lightModel.GetMesh(0)->SetScale(glm::vec3(0.3f, 0.3f, 0.3f));
 	check_gl_error();
+
+	Model lights[] = { Model("../3dcontent/models/sphere/sphere.obj"),
+		Model("../3dcontent/models/sphere/sphere.obj") ,
+		Model("../3dcontent/models/sphere/sphere.obj") ,
+		Model("../3dcontent/models/sphere/sphere.obj") };
+
+	for (auto &model : lights)
+	{
+		model.GetMesh(0)->SetScale(glm::vec3(0.3f, 0.3f, 0.3f));
+	}
 
 	WKRB_Camera mainCamera;
 
 
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+	glm::mat4 Projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 	// Camera matrix
 	glm::mat4 View = glm::lookAt(
 		glm::vec3(4, 7, 3), // Camera is at (4,3,3), in World Space
@@ -258,6 +273,9 @@ int main( void )
 
 #pragma region Lighting
 	glm::vec4 light(0, 0, 0, 25);
+
+
+	GLfloat ambiantIntensity = 0.4;
 
 	//vec3 lightPosition = vec3(4.0f, 3.0f, 3.0f);
 	vec3 lightColour = vec3(1, 1, 1);
@@ -292,7 +310,7 @@ int main( void )
 	unsigned int textureColorbuffer;
 	glGenTextures(1, &textureColorbuffer);
 	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_Width, window_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Resolution.x, Resolution.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
@@ -300,7 +318,7 @@ int main( void )
 	unsigned int rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_Width, window_height); // use a single renderbuffer object for both a depth AND stencil buffer.
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, Resolution.x, Resolution.y); // use a single renderbuffer object for both a depth AND stencil buffer.
 
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
@@ -336,7 +354,15 @@ int main( void )
 
 
 
-	bool postP = false;
+	bool postP = true;
+
+	bool grayScale = false;
+	bool Inverted = false;
+	bool sepia = false;
+	bool spiral = false;
+
+	GLfloat sAmmount = 2.0f;
+
 #pragma endregion
 
 
@@ -350,13 +376,13 @@ int main( void )
 
 	glm::vec3 lightPositions[] = {
 		glm::vec3(-10.0f,  10.0f,  10.0f),
-		glm::vec3(999.0f, 999.0f, 999.0f),
-		glm::vec3(999.0f, 999.0f, 999.0f),
-		glm::vec3(999.0f, 999.0f, 999.0f),
+		glm::vec3( 5.0f,	2.0f,	-7.0f),
+		glm::vec3(	4.0f, 4.0f,   -9.0f),
+		glm::vec3(10.0f, 2.0f, -9.0f),
 	};
 	glm::vec3 lightColors[] = {
 		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(100.0f, 100.0f, 300.0f),
 		glm::vec3(300.0f, 300.0f, 300.0f),
 		glm::vec3(300.0f, 300.0f, 300.0f)
 	};
@@ -367,6 +393,10 @@ int main( void )
 	unsigned int normal = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneNormalc.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
 	unsigned int roughness = SOIL_load_OGL_texture("../3dcontent/models/sphere/octostoneRoughness2.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
 
+	unsigned int terrainAlbedo = SOIL_load_OGL_texture("../3dcontent/models/sphere/NewProjectBitmapOutput513.png", SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_TEXTURE_REPEATS); //TextureFromFile(str.C_Str(), directory);
+
+
+	
 
 	float reflectionamount = 0.3f;
 	float indexofrefraction = 0.5f;
@@ -375,8 +405,14 @@ int main( void )
 	mainCamera.getCameraPosition();
 
 	float tankSpeed = 2.0f;
-	vec3 movingTankPos = vec3(3, -0.02, 0);
+	vec3 movingTankPos = vec3(3, 1.02, 0);
 	asusfB2.SetPosition(movingTankPos);
+
+
+
+	bool blinnPhong = 0;
+
+
 
 	bool tankForward = true;
 	do{
@@ -404,7 +440,15 @@ int main( void )
 		light.z = lightdistance * sinf(timeElapsed);
 
 		glm::vec3 lightpos(light);
-		lightModel.GetMesh(0)->SetPosition(lightpos);
+		lights[0].GetMesh(0)->SetPosition(lightpos);
+
+		
+		lights[1].GetMesh(0)->SetPosition(lightPositions[1]);
+		lights[2].GetMesh(0)->SetPosition(lightPositions[2]);
+		lights[3].GetMesh(0)->SetPosition(lightPositions[3]);
+
+
+
 		//check_gl_error();
 		mainCamera.computeMatricesFromInputs(deltaTime,window);
 
@@ -426,13 +470,22 @@ int main( void )
 
 		// draw the "fancy" mat first, he's got AO!
 		StandardShaderWithAO.use();
-		StandardShaderWithAO.setFloat("ambientlevel", 0.3f);
+		StandardShaderWithAO.setFloat("ambientlevel", ambiantIntensity);
 		StandardShaderWithAO.setVec3("lightColour", lightColour);
 		StandardShaderWithAO.setVec4("light", light);
-			
+		StandardShaderWithAO.setFloat("specularIntensity",specIndensity);
+		StandardShaderWithAO.setBool("blinnPhong",blinnPhong);
 
-	
-		baseModel.Render(View, Projection, StandardShader);
+	/*	glActiveTexture(GL_TEXTURE11);
+		glBindTexture(GL_TEXTURE_2D, terrainAlbedo);
+		glUniform1i(glGetUniformLocation(StandardShaderWithAO.ID, "texture_diffuse1"), terrainAlbedo);
+		*/
+
+		baseModel.Render(View, Projection, StandardShaderWithAO);
+
+		//glActiveTexture(GL_TEXTURE11); // activate the texture unit									
+		//glBindTexture(GL_TEXTURE_2D, 0);
+
 		togModel.Render(View, Projection, StandardShaderWithAO);
 	
 
@@ -442,7 +495,7 @@ int main( void )
 		StandardShaderWithReflect.use();
 		StandardShaderWithReflect.setInt("texcube", 20);
 		StandardShaderWithReflect.setFloat("reflectionamount", reflectionamount);
-		StandardShaderWithReflect.setFloat("ambientlevel", 0.4f);
+		StandardShaderWithReflect.setFloat("ambientlevel", ambiantIntensity);
 		StandardShaderWithReflect.setVec3("lightColour", lightColour);
 		StandardShaderWithReflect.setVec4("light", light);
 		StandardShaderWithReflect.setVec3("cameraPosition", cameraPosition);
@@ -453,7 +506,7 @@ int main( void )
 		StandardShaderWithRefract.use();
 		StandardShaderWithRefract.setInt("texcube", 20);
 		StandardShaderWithRefract.setFloat("reflectionamount", reflectionamount);
-		StandardShaderWithRefract.setFloat("ambientlevel", 0.4f);
+		StandardShaderWithRefract.setFloat("ambientlevel", ambiantIntensity);
 		StandardShaderWithRefract.setVec3("lightColour", lightColour);
 		StandardShaderWithRefract.setVec4("light", light);
 		StandardShaderWithRefract.setVec3("cameraPosition", cameraPosition);
@@ -479,7 +532,7 @@ int main( void )
 
 		PBR.use();
 		
-		PBR.setFloat("ambientlevel", 0.3f);
+		PBR.setFloat("ambientlevel", ambiantIntensity);
 
 
 
@@ -523,19 +576,19 @@ int main( void )
 
 		glActiveTexture(GL_TEXTURE11);
 		glUniform1i(glGetUniformLocation(PBR.ID, "texture_diffuse1"), Albedo);
-		glBindTexture(GL_TEXTURE_2D, matalic);
+		glBindTexture(GL_TEXTURE_2D, Albedo);
 
 		glActiveTexture(GL_TEXTURE12);
 		glUniform1i(glGetUniformLocation(PBR.ID, "texture_ao1"), AO);
-		glBindTexture(GL_TEXTURE_2D, matalic);
+		glBindTexture(GL_TEXTURE_2D, AO);
 
 		glActiveTexture(GL_TEXTURE13);
 		glUniform1i(glGetUniformLocation(PBR.ID, "texture_specular1"), roughness);
-		glBindTexture(GL_TEXTURE_2D, matalic);
+		glBindTexture(GL_TEXTURE_2D, roughness);
 
 		glActiveTexture(GL_TEXTURE14);
 		glUniform1i(glGetUniformLocation(PBR.ID, "texture_height1"), normal);
-		glBindTexture(GL_TEXTURE_2D, matalic);
+		glBindTexture(GL_TEXTURE_2D, normal);
 
 		sphere.Render(View,Projection,PBR);
 
@@ -554,8 +607,10 @@ int main( void )
 		// using a sphere for a light so we can vizualize the light position
 		// it has a custom shader that basically emits solid white
 		lightShader.use();
-		lightModel.Render(View, Projection, lightShader);
-
+		for (auto &light : lights)
+		{
+			light.Render(View, Projection, lightShader);
+		}
 		
 
 		if (postP == true)
@@ -569,6 +624,14 @@ int main( void )
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			screenShader.use();
+
+			screenShader.setBool("grayScale", grayScale);
+			screenShader.setBool("inverted", Inverted);
+			screenShader.setBool("sepia", sepia);
+			screenShader.setBool("spiral", spiral);
+			screenShader.setVec2("resolution", Resolution);
+			screenShader.setFloat("sAmmount", sAmmount);
+
 			glBindVertexArray(quadVAO);
 			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);	// use the color attachment texture as the texture of the quad plane
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -618,6 +681,41 @@ int main( void )
 			postP = !postP;
 		}
 
+		if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+		{
+			grayScale = !grayScale;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+		{
+			Inverted = !Inverted;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+		{
+			sepia = !sepia;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+		{
+			spiral = !spiral;
+		}
+
+
+
+		if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS)
+		{
+			sAmmount += 0.01f;
+			//if (reflectionamount > 1.0f) reflectionamount = 1.0f;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_KP_5) == GLFW_PRESS)
+		{
+			sAmmount -= 0.01f;
+			//if (reflectionamount < 0.0f) reflectionamount = 0.0f;
+		}
+
+
 
 
 #
@@ -654,6 +752,20 @@ int main( void )
 			tankForward = !tankForward;
 		}
 
+		if (glfwGetKey(window, GLFW_KEY_KP_9) == GLFW_PRESS)
+		{
+			blinnPhong = true;
+		}
+		if (glfwGetKey(window, GLFW_KEY_KP_6) == GLFW_PRESS)
+		{
+			blinnPhong = false;
+		}
+
+
+
+
+
+
 
 		std::cout << "reflection amount: " << reflectionamount << "  index of refraction: " << indexofrefraction << std::endl;
 
@@ -678,7 +790,7 @@ int main( void )
 			asusfB2.SetPosition(movingTankPos);
 
 		}
-		else if(!tankForward && movingTankPos.z > -5)
+		else if(!tankForward && movingTankPos.z > 0)
 		{
 			movingTankPos += (vec3(0, 0, -1)*tankSpeed)*deltaTime;
 			asusfB2.SetPosition(movingTankPos);
