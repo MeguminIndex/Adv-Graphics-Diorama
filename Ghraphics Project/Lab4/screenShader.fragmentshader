@@ -12,7 +12,8 @@ uniform bool grayScale;
 uniform bool sepia;
 uniform bool spiral;
 
-
+uniform bool gamaCorrection;
+uniform float gammaValue;
 
 
 uniform vec2 resolution;
@@ -29,10 +30,10 @@ void main()
 	{
 	
 		//create a swhirle spiral effect using
-		vec2 p = -1.0 + 2.0 * gl_FragCoord.xy / resolution.xy;
+		vec2 p = -1.0 + 2.0 * gl_FragCoord.xy / resolution.xy;// adjust p value to map to screen space
 		vec2 uv; 
 
-		float a = atan(p.y,p.x) / (2.0*3.1416);//using p value divide by a const factor (2.0) and pi changing factor adjusts the spiral
+		float a = atan(p.y,p.x) / (2.0*3.1416);//using p value divide by a const factor (2.0) * pi changing factor adjusts the spiral
 		//a factor of 2 will have the spiral connect whilst changing the factor could cause several mirrored sections of the spiral on the screen 
 		
 		//sqrt(Tweaking this number affects the size of the spiral and canmake the spiral smaller and increase)
@@ -81,5 +82,13 @@ void main()
 
 
 	  FragColor = vec4(col, 1.0);
+	  
+	  
+	  if(gamaCorrection == true)
+	  {
+	  // apply gamma correction
+		FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gammaValue));
+	  }
+	  
 
 } 

@@ -119,7 +119,7 @@ int main( void )
 	Resolution.y = window_height;
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(Resolution.x, Resolution.y, "Lab4 - Phong with specular+ambient occlusion maps", NULL, NULL);
+	window = glfwCreateWindow(Resolution.x, Resolution.y, "Wesley Beck Assesment", NULL, NULL);
 	if( window == NULL ){
 		fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
 		getchar();
@@ -360,7 +360,9 @@ int main( void )
 	bool Inverted = false;
 	bool sepia = false;
 	bool spiral = false;
+	bool gammaCorrection = false;
 
+	GLfloat gammaValue = 2.2f;
 	GLfloat sAmmount = 2.0f;
 
 #pragma endregion
@@ -631,6 +633,8 @@ int main( void )
 			screenShader.setBool("spiral", spiral);
 			screenShader.setVec2("resolution", Resolution);
 			screenShader.setFloat("sAmmount", sAmmount);
+			screenShader.setFloat("gammaValue",gammaValue);
+			screenShader.setBool("gamaCorrection",gammaCorrection);
 
 			glBindVertexArray(quadVAO);
 			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);	// use the color attachment texture as the texture of the quad plane
@@ -665,16 +669,6 @@ int main( void )
 			IsAnimatingTime = false;
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
-		{
-			bShowNormalMap = true;
-		}
-
-		if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
-		{
-			bShowNormalMap = false;
-		}
-
 
 		if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 		{
@@ -702,17 +696,33 @@ int main( void )
 		}
 
 
+		if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+		{
+			gammaCorrection = !gammaCorrection;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS)
+		{
+			gammaValue += 0.1f *deltaTime;
+		}
+
+
+		if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS)
+		{
+			gammaValue -= 0.1f *deltaTime;
+			if (gammaValue < 0)
+				gammaValue = 0;
+		}
 
 		if (glfwGetKey(window, GLFW_KEY_KP_4) == GLFW_PRESS)
 		{
-			sAmmount += 0.01f;
-			//if (reflectionamount > 1.0f) reflectionamount = 1.0f;
+			sAmmount += 0.1f *deltaTime;
+			
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_KP_5) == GLFW_PRESS)
 		{
-			sAmmount -= 0.01f;
-			//if (reflectionamount < 0.0f) reflectionamount = 0.0f;
+			sAmmount -= 0.1f *deltaTime;
 		}
 
 
@@ -769,7 +779,7 @@ int main( void )
 
 		std::cout << "reflection amount: " << reflectionamount << "  index of refraction: " << indexofrefraction << std::endl;
 
-
+		std::cout << "Gamma Value" << gammaValue << std::endl;
 
 
 
